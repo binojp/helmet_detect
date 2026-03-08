@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helmet Detection Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --accent: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+        }
+
+        .tabs-container {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab-btn {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-dim);
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+        }
+
+        .tab-btn i {
+            font-size: 1.2rem;
+        }
+
+        .tab-btn:hover {
+            border-color: var(--primary);
+            color: var(--text-main);
+            transform: translateY(-2px);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 20px var(--primary-glow);
+        }
+
+        .detection-area {
+            background: var(--card-bg);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            min-height: 500px;
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: zoomIn 0.5s ease-out;
+        }
+
+        .content-panel {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 2rem;
+        }
+
+        .content-panel.active {
+            display: flex;
+        }
+
+        .display-container {
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 16/9;
+            background: #020617;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .display-container img, .display-container video {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .upload-placeholder {
+            text-align: center;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .upload-placeholder i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .upload-placeholder:hover {
+            color: var(--text-main);
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 20px var(--primary-glow);
+            transform: scale(1.05);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        #loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        #file-input-image, #file-input-video {
+            display: none;
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <p>Advanced Real-time Helmet Detection</p>
+        </header>
+
+        <div class="tabs-container">
+            <button class="tab-btn active" onclick="switchTab('image')">
+                <i class="fas fa-image"></i> Image Detection
+            </button>
+            <button class="tab-btn" onclick="switchTab('video')">
+                <i class="fas fa-video"></i> Video Detection
+            </button>
+            <button class="tab-btn" onclick="switchTab('live')">
+                <i class="fas fa-camera"></i> Live Detection
+            </button>
+            <button class="tab-btn" onclick="switchTab('bulk')">
+                <i class="fas fa-layer-group"></i> Bulk Detection
+            </button>
+        </div>
+
+        <div class="detection-area">
+            <div id="loading-overlay">
+                <div class="spinner"></div>
+                <p id="loading-text" style="margin-top: 1rem;">Processing...</p>
+            </div>
+
+            <!-- Image Panel -->
+            <div id="image-panel" class="content-panel active">
+                <div class="display-container" onclick="document.getElementById('file-input-image').click()">
+                    <div id="image-placeholder" class="upload-placeholder">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Click to upload an image</p>
+                    </div>
+                    <img id="image-display" src="" class="hidden">
+                </div>
+                <input type="file" id="file-input-image" accept="image/*" onchange="handleImageUpload(event)">
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="processImage()"><i class="fas fa-search"></i> Start Analysis</button>
+                    <button class="btn btn-secondary" onclick="resetImage()"><i class="fas fa-undo"></i> Reset</button>
+                </div>
+                <div id="image-stats" class="stats hidden">
+                    <div class="stat-item">
+                        <span id="detection-count" class="stat-value">0</span>
+                        <span class="stat-label">Detections</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Panel -->
+            <div id="video-panel" class="content-panel">
+                <div class="display-container" onclick="document.getElementById('file-input-video').click()">
+                    <div id="video-placeholder" class="upload-placeholder">
+                        <i class="fas fa-film"></i>
+                        <p>Click to upload a video</p>
+                    </div>
+                    <img id="video-display" src="" class="hidden">
+                </div>
+                <input type="file" id="file-input-video" accept="video/*" onchange="handleVideoUpload(event)">
+                <div class="controls">
+                    <button id="video-start-btn" class="btn btn-primary" onclick="processVideo()"><i class="fas fa-play"></i> Process Video</button>
+                    <button class="btn btn-secondary" onclick="resetVideo()"><i class="fas fa-undo"></i> Reset</button>
+                </div>
+            </div>
+
+            <!-- Live Panel -->
+            <div id="live-panel" class="content-panel">
+                <div class="display-container">
+                    <img id="live-feed" src="" class="hidden">
+                    <div id="live-placeholder" class="upload-placeholder">
+                        <i class="fas fa-camera-retro"></i>
+                        <p>Webcam preview will appear here</p>
+                    </div>
+                </div>
+                <div class="controls">
+                    <button id="start-webcam" class="btn btn-primary" onclick="startWebcam()"><i class="fas fa-video"></i> Start Live Feed</button>
+                    <button id="stop-webcam" class="btn btn-danger hidden" onclick="stopWebcam()"><i class="fas fa-video-slash"></i> Stop Feed</button>
+                </div>
+            </div>
+
+            <!-- Bulk Panel -->
+            <div id="bulk-panel" class="content-panel">
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="document.getElementById('bulk-input').click()">
+                        <i class="fas fa-upload"></i> Upload Bulk Files
+                    </button>
+                    <input type="file" id="bulk-input" multiple accept="image/*,video/*" class="hidden" onchange="handleBulkUpload(event)">
+                    <button class="btn btn-secondary" onclick="resetBulk()"><i class="fas fa-trash"></i> Clear All</button>
+                </div>
+                
+                <div id="bulk-results" class="bulk-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; width: 100%; margin-top: 2rem;">
+                    <!-- Results cards will go here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'image';
+        let selectedFile = null;
+        let bulkFiles = [];
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.content-panel').forEach(panel => panel.classList.remove('active'));
+            
+            // Find the button that was clicked or matching tab
+            const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.innerText.toLowerCase().includes(tab));
+            if (targetBtn) targetBtn.classList.add('active');
+            else event.currentTarget.classList.add('active');
+
+            document.getElementById(`${tab}-panel`).classList.add('active');
+            
+            if (tab !== 'live') {
+                stopWebcam();
+            }
+        }
+
+        function handleImageUpload(event) {
+            selectedFile = event.target.files[0];
+            if (selectedFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const display = document.getElementById('image-display');
+                    display.src = e.target.result;
+                    display.classList.remove('hidden');
+                    document.getElementById('image-placeholder').classList.add('hidden');
+                }
+                reader.readAsDataURL(selectedFile);
+            }
+        }
+
+        function processImage() {
+            if (!selectedFile) {
+                alert("Please select an image first");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            showLoading(true);
+            fetch('/detect_image', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                showLoading(false);
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    const display = document.getElementById('image-display');
+                    display.src = '/' + data.detected + '?t=' + new Date().getTime();
+                    document.getElementById('image-stats').classList.remove('hidden');
+                    document.getElementById('detection-count').innerText = data.count;
+                }
+            })
+            .catch(err => {
+                showLoading(false);
+                console.error(err);
+                alert("An error occurred during detection");
+            });
+        }
+
+        function resetImage() {
+            selectedFile = null;
+            document.getElementById('image-display').src = "";
+            document.getElementById('image-display').classList.add('hidden');
+            document.getElementById('image-placeholder').classList.remove('hidden');
+            document.getElementById('image-stats').classList.add('hidden');
+            document.getElementById('file-input-image').value = "";
+        }
+
+        function handleVideoUpload(event) {
+            selectedFile = event.target.files[0];
+            if (selectedFile) {
+                document.getElementById('video-placeholder').innerHTML = `<i class="fas fa-check-circle" style="color: var(--accent)"></i><p>${selectedFile.name} selected</p>`;
+            }
+        }
+
+        function processVideo() {
+            if (!selectedFile) {
+                alert("Please select a video first");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            showLoading(true);
+            fetch('/detect_video', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                showLoading(false);
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    const videoDisplay = document.getElementById('video-display');
+                    videoDisplay.src = `/video_stream/${data.filename}`;
+                    videoDisplay.classList.remove('hidden');
+                    document.getElementById('video-placeholder').classList.add('hidden');
+                    document.getElementById('video-start-btn').classList.add('hidden');
+                }
+            })
+            .catch(err => {
+                showLoading(false);
+                console.error(err);
+                alert("Error uploading video");
+            });
+        }
+
+        function resetVideo() {
+            selectedFile = null;
+            document.getElementById('video-display').src = "";
+            document.getElementById('video-display').classList.add('hidden');
+            document.getElementById('video-placeholder').classList.remove('hidden');
+            document.getElementById('video-placeholder').innerHTML = `<i class="fas fa-film"></i><p>Click to upload a video</p>`;
+            document.getElementById('video-start-btn').classList.remove('hidden');
+            document.getElementById('file-input-video').value = "";
+        }
+
+        function startWebcam() {
+            const feed = document.getElementById('live-feed');
+            feed.src = "/video_feed";
+            feed.classList.remove('hidden');
+            document.getElementById('live-placeholder').classList.add('hidden');
+            document.getElementById('start-webcam').classList.add('hidden');
+            document.getElementById('stop-webcam').classList.remove('hidden');
+        }
+
+        function stopWebcam() {
+            const feed = document.getElementById('live-feed');
+            feed.src = "";
+            feed.classList.add('hidden');
+            document.getElementById('live-placeholder').classList.remove('hidden');
+            document.getElementById('start-webcam').classList.remove('hidden');
+            document.getElementById('stop-webcam').classList.add('hidden');
+            fetch('/stop_webcam');
+        }
+
+        function handleBulkUpload(event) {
+            const files = Array.from(event.target.files);
+            if (files.length === 0) return;
+
+            const images = files.filter(f => f.type.startsWith('image/'));
+            const videos = files.filter(f => f.type.startsWith('video/'));
+
+            if (images.length > 0) {
+                processBulkImages(images);
+            }
+            if (videos.length > 0) {
+                processBulkVideos(videos);
+            }
+        }
+
+        async function processBulkImages(images) {
+            const formData = new FormData();
+            images.forEach(img => formData.append('files', img));
+
+            showLoading(true, `Processing ${images.length} images...`);
+            try {
+                const response = await fetch('/detect_bulk_images', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                showLoading(false);
+                
+                if (data.results) {
+                    data.results.forEach(res => addBulkResultCard(res, 'image'));
+                }
+            } catch (err) {
+                showLoading(false);
+                console.error(err);
+                alert("Bulk image processing failed");
+            }
+        }
+
+        async function processBulkVideos(videos) {
+            const formData = new FormData();
+            videos.forEach(vid => formData.append('files', vid));
+
+            showLoading(true, `Uploading ${videos.length} videos...`);
+            try {
+                const response = await fetch('/detect_bulk_videos', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                showLoading(false);
+                
+                if (data.results) {
+                    data.results.forEach(res => addBulkResultCard(res, 'video'));
+                }
+            } catch (err) {
+                showLoading(false);
+                console.error(err);
+                alert("Bulk video upload failed");
+            }
+        }
+
+        function addBulkResultCard(res, type) {
+            const grid = document.getElementById('bulk-results');
+            const card = document.createElement('div');
+            card.style.cssText = `
+                background: rgba(255,255,255,0.05);
+                border-radius: 12px;
+                padding: 10px;
+                border: 1px solid rgba(255,255,255,0.1);
+                transition: transform 0.3s;
+                display: flex;
+                flex-direction: column;
+            `;
+            
+            if (type === 'image') {
+                card.innerHTML = `
+                    <div style="width:100%; height:200px; display:flex; align-items:center; justify-content:center; background:#000; border-radius:8px; overflow:hidden;">
+                        <img src="/${res.detected}" style="max-width:100%; max-height:100%; object-fit:contain;">
+                    </div>
+                    <div style="margin-top:10px;">
+                        <p style="font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${res.name}">${res.name}</p>
+                        <p style="color:var(--primary); font-weight:bold;">${res.count} Detections</p>
+                    </div>
+                `;
+            } else {
+                card.innerHTML = `
+                    <div style="width:100%; height:200px; background:#000; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="playBulkVideo('${res.filename}')">
+                        <i class="fas fa-play-circle" style="font-size:3rem; color:var(--primary);"></i>
+                    </div>
+                    <div style="margin-top:10px;">
+                        <p style="font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${res.name}">${res.name}</p>
+                        <p style="color:var(--accent);">Video Stream Ready</p>
+                    </div>
+                `;
+            }
+            
+            card.onmouseenter = () => card.style.transform = 'translateY(-5px)';
+            card.onmouseleave = () => card.style.transform = 'translateY(0)';
+            grid.appendChild(card);
+        }
+
+        function playBulkVideo(filename) {
+            // Switch to video tab and play
+            switchTab('video');
+            const videoDisplay = document.getElementById('video-display');
+            videoDisplay.src = `/video_stream/${filename}`;
+            videoDisplay.classList.remove('hidden');
+            document.getElementById('video-placeholder').classList.add('hidden');
+            document.getElementById('video-start-btn').classList.add('hidden');
+        }
+
+        function resetBulk() {
+            document.getElementById('bulk-results').innerHTML = '';
+            document.getElementById('bulk-input').value = '';
+        }
+
+        function showLoading(show, text = 'Processing...') {
+            document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none';
+            document.getElementById('loading-text').innerText = text;
+        }
+    </script>
+</body>
+</html>
